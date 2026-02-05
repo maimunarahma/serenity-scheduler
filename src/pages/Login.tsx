@@ -5,29 +5,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, Users } from 'lucide-react';
-import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
-import NotFound from './NotFound';
+import { InlineSpinner } from '@/components/ui/loading-spinner';
+
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
- const { login, isLoading , logout} = useAuth();
-  const handleLogin = async(e: React.FormEvent) => {
-   
-    // Static login - just navigate to dashboard
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const { login } = useAuth();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    
     try {
-       e.preventDefault();
       await login(email, password);
-       navigate('/dashboard');
-       alert('Login successful!');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      alert('Login failed. Please try again.');
+      alert('Login failed. Please check your credentials.');
+    } finally {
+      setIsLoggingIn(false);
     }
-   
   };
-  if(isLoading) return <NotFound />;
 
   return (
     <div className="min-h-screen flex">
@@ -136,8 +137,19 @@ const Login = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-4">
-                <Button type="submit" className="w-full h-11 gradient-primary text-primary-foreground font-medium">
-                  Sign In
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 gradient-primary text-primary-foreground font-medium"
+                  disabled={isLoggingIn}
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <InlineSpinner className="mr-2" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
                 </Button>
                 <p className="text-sm text-muted-foreground text-center">
                   Don't have an account?{' '}

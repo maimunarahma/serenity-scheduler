@@ -42,35 +42,37 @@ const AppContent = () => {
   }
 
   return (
-    <TooltipProvider>
+    <AppointmentProvider>
       <StaffProvider>
-        <AppointmentProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Navigate to="/login" />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/staff" element={<StaffPage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/appointments" element={<AppointmentsPage />} />
-              <Route path="/queue" element={<QueuePage />} />
-              <Route path="/activity" element={<ActivityPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AppointmentProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/staff" element={<StaffPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/appointments" element={<AppointmentsPage />} />
+            <Route path="/queue" element={<QueuePage />} />
+            <Route path="/activity" element={<ActivityPage />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
       </StaffProvider>
-    </TooltipProvider>
+    </AppointmentProvider>
   );
 };
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
