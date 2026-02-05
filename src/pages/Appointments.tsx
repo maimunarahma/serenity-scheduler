@@ -141,7 +141,7 @@ const AppointmentsPage = () => {
   };
  const sortedAppointments = useMemo(() => {
     if(!Array.isArray(appointments)) return [];
-    return [...appointments].filter(a=> trypeof a.startTime === 'string')
+    return [...appointments].filter(a=> typeof a.startTime === 'string')
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [appointments]);
   return (
