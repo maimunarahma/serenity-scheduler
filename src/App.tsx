@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppointmentProvider } from "@/contexts/AppointmentContext";
 import { StaffProvider } from "@/contexts/StaffContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useEffect, useState } from "react";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
@@ -26,12 +27,20 @@ const queryClient = new QueryClient({
     },
   },
 });
-
 // Component that shows loading during auth check
 const AppContent = () => {
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    // Once the initial auth check completes, mark it as done
+    if (!isLoading) {
+      setInitialCheckDone(true);
+    }
+  }, [isLoading]);
+
+  // Only show central spinner during initial auth check
+  if (!initialCheckDone && isLoading) {
     return (
       <LoadingSpinner 
         size="xl" 
@@ -47,6 +56,7 @@ const AppContent = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          
           <Routes>
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
