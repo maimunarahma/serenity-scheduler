@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -13,6 +13,8 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/authHook';
+import NotFound from '@/pages/NotFound';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -28,9 +30,22 @@ interface AppLayoutProps {
 }
 
 const AppLayout = ({ children }: AppLayoutProps) => {
+  const { user , isLoading , error,  logout } = useAuth();
+  console.log(user)
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+
+    } catch (error) {
+      alert('Logout failed. Please try again.');
+    }
+  }
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  if(isLoading) return < NotFound />;
+  console.log(user)
   return (
     <div className="min-h-screen flex bg-background">
       {/* Mobile sidebar backdrop */}
@@ -94,10 +109,10 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           <div className="p-4 border-t border-sidebar-border">
             <div className="flex items-center gap-3 px-3 py-2">
               <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <span className="text-sm font-medium text-sidebar-accent-foreground">JD</span>
+                <span className="text-sm font-medium text-sidebar-accent-foreground">{user?.email.charAt(0).toUpperCase()}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">John Doe</p>
+                <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.email}</p>
                 <p className="text-xs text-sidebar-foreground/60 truncate">Admin</p>
               </div>
             </div>
@@ -105,7 +120,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
               to="/login"
               className="flex items-center gap-3 px-4 py-3 mt-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-5 h-5"  onClick={handleLogout}/>
               Sign out
             </NavLink>
           </div>

@@ -6,8 +6,7 @@ export type AvailabilityStatus = 'Available' | 'On Leave';
 
 export type ServiceDuration = 15 | 30 | 60;
 
-export type AppointmentStatus = 'Scheduled' | 'Completed' | 'Cancelled' | 'No-Show';
-
+export type AppointmentStatus = 'Waiting' | 'Scheduled' | 'Completed' | 'Cancelled' | 'No-Show';
 export interface Staff {
   id: string;
   name: string;
@@ -26,14 +25,16 @@ export interface Service {
 }
 
 export interface Appointment {
-  id: string;
+  id?: string;
   customerName: string;
-  serviceId: string;
-  assignedStaffId: string | null;
+  service: string;
+  staff: string | null;
   date: string; // ISO date string
-  time: string; // HH:MM format
+  startTime: string; // HH:MM format
+  endTime: string; 
+  queuePosition?: number | null;
   status: AppointmentStatus;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface QueueItem {
@@ -55,4 +56,24 @@ export interface DashboardStats {
   completed: number;
   pending: number;
   waitingQueueCount: number;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  password?: string
+
+}
+
+export interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: Error | null;
+  register: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateUser: (user: Partial<User>) => void;
+  refetch: () => void;
+  isRefetching: boolean;
 }

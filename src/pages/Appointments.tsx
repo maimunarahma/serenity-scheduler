@@ -24,16 +24,19 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { mockAppointments, mockServices, mockStaff, getStaffLoad } from '@/data/mockData';
+import {  mockServices, mockStaff, getStaffLoad } from '@/data/mockData';
 import { Appointment, AppointmentStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAppointments } from '@/hooks/useAppointments';
+import { PageLoader, InlineSpinner, SavingOverlay } from '@/components/ui/loading-spinner';
 
 const statusColors: Record<AppointmentStatus, string> = {
   Scheduled: 'bg-primary/10 text-primary',
   Completed: 'bg-success/10 text-success',
   Cancelled: 'bg-muted text-muted-foreground',
   'No-Show': 'bg-destructive/10 text-destructive',
+  Waiting: 'bg-yellow-100 text-yellow-800',
 };
 
 const timeSlots = Array.from({ length: 18 }, (_, i) => {
@@ -43,23 +46,23 @@ const timeSlots = Array.from({ length: 18 }, (_, i) => {
 });
 
 const AppointmentsPage = () => {
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const { appointments, createAppointment, deleteAppointment, isLoading, error, isCreating, isSaving } = useAppointments();
+  console.log(appointments)
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [conflict, setConflict] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     customerName: '',
-    serviceId: '',
-    assignedStaffId: '',
+    service: '',
+    staff: '',
     date: new Date().toISOString().split('T')[0],
-    time: '09:00',
-    status: 'Scheduled' as AppointmentStatus,
+    startTime: '',
+    endTime: '',
+    status: 'Waiting'
   });
 
-  const filteredAppointments = appointments.filter(
-    (apt) => apt.date === format(selectedDate, 'yyyy-MM-dd')
-  );
+  
 
   const handleOpenDialog = (appointment?: Appointment) => {
     setConflict(null);
@@ -67,90 +70,62 @@ const AppointmentsPage = () => {
       setEditingAppointment(appointment);
       setFormData({
         customerName: appointment.customerName,
-        serviceId: appointment.serviceId,
-        assignedStaffId: appointment.assignedStaffId || '',
+        service: appointment.service,
+        staff: appointment.staff || '',
         date: appointment.date,
-        time: appointment.time,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
         status: appointment.status,
       });
     } else {
       setEditingAppointment(null);
       setFormData({
         customerName: '',
-        serviceId: '',
-        assignedStaffId: '',
+        service: '',
+        staff: '',
         date: format(selectedDate, 'yyyy-MM-dd'),
-        time: '09:00',
+        startTime: '09:00',
+        endTime: '09:30',
         status: 'Scheduled',
       });
     }
     setDialogOpen(true);
   };
 
-  const checkConflict = (staffId: string, date: string, time: string, excludeId?: string) => {
-    const existingAppointment = appointments.find(
-      (apt) =>
-        apt.assignedStaffId === staffId &&
-        apt.date === date &&
-        apt.time === time &&
-        apt.id !== excludeId &&
-        apt.status !== 'Cancelled'
-    );
-    return existingAppointment;
-  };
 
-  const handleStaffChange = (staffId: string) => {
-    const conflictingApt = checkConflict(staffId, formData.date, formData.time, editingAppointment?.id);
-    const staff = mockStaff.find((s) => s.id === staffId);
-    
-    if (conflictingApt) {
-      setConflict(`${staff?.name} already has an appointment at this time.`);
-    } else {
-      setConflict(null);
-    }
-    setFormData({ ...formData, assignedStaffId: staffId });
-  };
 
   const handleTimeChange = (time: string) => {
-    if (formData.assignedStaffId) {
-      const conflictingApt = checkConflict(formData.assignedStaffId, formData.date, time, editingAppointment?.id);
-      const staff = mockStaff.find((s) => s.id === formData.assignedStaffId);
-      
-      if (conflictingApt) {
-        setConflict(`${staff?.name} already has an appointment at this time.`);
-      } else {
-        setConflict(null);
+   setFormData({ ...formData, startTime: time });
+  };
+
+    const handleEndTimeChange = (time: string) => {
+ 
+    setFormData({ ...formData, endTime: time });
+  };
+  const handleSave = async(e: React.FormEvent) => {
+    try {
+      const appointment: Appointment = {
+        customerName: formData.customerName,
+        service: formData.service,
+        staff: formData.staff || null,
+        date: formData.date,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        status: formData.status as AppointmentStatus,
+        
       }
+      console.log(appointment)
+      await createAppointment(appointment);
+      setDialogOpen(false);
+      alert('Appointment saved successfully!');
+    } catch (error) {
+      alert('Failed to save appointment. Please try again.'); 
     }
-    setFormData({ ...formData, time });
+ 
   };
 
-  const handleSave = () => {
-    if (editingAppointment) {
-      setAppointments(
-        appointments.map((apt) =>
-          apt.id === editingAppointment.id ? { ...apt, ...formData } : apt
-        )
-      );
-    } else {
-      const newAppointment: Appointment = {
-        id: Date.now().toString(),
-        ...formData,
-        createdAt: new Date().toISOString(),
-      };
-      setAppointments([...appointments, newAppointment]);
-    }
-    setDialogOpen(false);
-  };
-
-  const handleStatusChange = (id: string, status: AppointmentStatus) => {
-    setAppointments(
-      appointments.map((apt) => (apt.id === id ? { ...apt, status } : apt))
-    );
-  };
-
-  const handleDelete = (id: string) => {
-    setAppointments(appointments.filter((apt) => apt.id !== id));
+  const handleDelete = async (id: string) => {
+    await deleteAppointment(id);
   };
 
   const getService = (serviceId: string) => mockServices.find((s) => s.id === serviceId);
@@ -173,13 +148,28 @@ const AppointmentsPage = () => {
             <h2 className="text-2xl font-display font-bold text-foreground">Appointments</h2>
             <p className="text-muted-foreground mt-1">Manage and schedule appointments</p>
           </div>
-          <Button onClick={() => handleOpenDialog()} className="gradient-primary text-primary-foreground">
+          <Button onClick={() => handleOpenDialog()} className="gradient-primary text-primary-foreground" disabled={isSaving}>
             <Plus className="w-4 h-4 mr-2" />
             New Appointment
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Loading State */}
+        {isLoading && <PageLoader text="Loading appointments..." />}
+
+        {/* Error State */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load appointments: {error.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isLoading && !error && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 relative">
+          {isSaving && <SavingOverlay text="Saving appointment..." />}
           {/* Calendar */}
           <Card className="lg:col-span-1 border-border/50">
             <CardHeader className="pb-2">
@@ -201,10 +191,10 @@ const AppointmentsPage = () => {
               <h3 className="text-lg font-semibold text-foreground">
                 {format(selectedDate, 'EEEE, MMMM d, yyyy')}
               </h3>
-              <Badge variant="secondary">{filteredAppointments.length} appointments</Badge>
+              <Badge variant="secondary">{appointments?.length} appointments</Badge>
             </div>
 
-            {filteredAppointments.length === 0 ? (
+            {appointments.length === 0 ? (
               <Card className="border-border/50 border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <CalendarIcon className="w-12 h-12 text-muted-foreground/50 mb-4" />
@@ -220,11 +210,11 @@ const AppointmentsPage = () => {
               </Card>
             ) : (
               <div className="space-y-3">
-                {filteredAppointments
-                  .sort((a, b) => a.time.localeCompare(b.time))
+                {appointments
+                  .sort((a, b) => a.startTime.localeCompare(b.startTime))
                   .map((appointment) => {
-                    const service = getService(appointment.serviceId);
-                    const staff = getStaff(appointment.assignedStaffId);
+                    const service = getService(appointment.service);
+                    const staff = getStaff(appointment.staff);
 
                     return (
                       <Card key={appointment.id} className="border-border/50 hover:shadow-md transition-shadow">
@@ -232,7 +222,7 @@ const AppointmentsPage = () => {
                           <div className="flex items-start justify-between">
                             <div className="flex items-start gap-4">
                               <div className="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-primary/10 text-primary">
-                                <span className="text-lg font-bold">{appointment.time}</span>
+                                <span className="text-lg font-bold">{appointment.startTime}</span>
                                 <span className="text-xs">{service?.duration}m</span>
                               </div>
                               <div>
@@ -256,7 +246,7 @@ const AppointmentsPage = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
-                              {appointment.status === 'Scheduled' && (
+                              {/* {appointment.status === 'Scheduled' && (
                                 <>
                                   <Button
                                     variant="ghost"
@@ -275,7 +265,7 @@ const AppointmentsPage = () => {
                                     <X className="w-4 h-4" />
                                   </Button>
                                 </>
-                              )}
+                              )} */}
                               <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(appointment)}>
                                 <Edit2 className="w-4 h-4" />
                               </Button>
@@ -297,8 +287,7 @@ const AppointmentsPage = () => {
             )}
           </div>
         </div>
-
-        {/* Appointment Dialog */}
+        )}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
@@ -325,9 +314,9 @@ const AppointmentsPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="service">Service</Label>
                 <Select
-                  value={formData.serviceId}
+                  value={formData.service}
                   onValueChange={(value) => {
-                    setFormData({ ...formData, serviceId: value, assignedStaffId: '' });
+                    setFormData({ ...formData, service: value, staff: '' });
                     setConflict(null);
                   }}
                 >
@@ -336,7 +325,7 @@ const AppointmentsPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {mockServices.map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
+                      <SelectItem key={service.id} value={service.name}>
                         {service.name} ({service.duration} min)
                       </SelectItem>
                     ))}
@@ -357,7 +346,7 @@ const AppointmentsPage = () => {
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={new Date(formData.date)}
+                        selected={formData.date ? new Date(formData.date) : undefined}
                         onSelect={(date) =>
                           date && setFormData({ ...formData, date: format(date, 'yyyy-MM-dd') })
                         }
@@ -369,8 +358,24 @@ const AppointmentsPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="time">Time</Label>
-                  <Select value={formData.time} onValueChange={handleTimeChange}>
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Select value={formData.startTime} onValueChange={handleTimeChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSlots.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Select value={formData.endTime} onValueChange={handleEndTimeChange}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -387,36 +392,17 @@ const AppointmentsPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="staff">Assign Staff</Label>
-                <Select
-                  value={formData.assignedStaffId}
-                  onValueChange={handleStaffChange}
-                  disabled={!formData.serviceId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={formData.serviceId ? 'Select staff' : 'Select a service first'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getEligibleStaff(formData.serviceId).map((staff) => {
-                      const { current, max } = getStaffLoad(staff.id);
-                      const isOverloaded = current >= max;
-                      return (
-                        <SelectItem key={staff.id} value={staff.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{staff.name}</span>
-                            <span className={cn('text-xs', isOverloaded ? 'text-destructive' : 'text-muted-foreground')}>
-                              ({current} / {max})
-                            </span>
-                            {isOverloaded && <AlertTriangle className="w-3 h-3 text-warning" />}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-                {formData.assignedStaffId && (() => {
-                  const { current, max } = getStaffLoad(formData.assignedStaffId);
+
+                    <Input
+                    placeholder={formData.service ? 'Enter staff name' : 'Select a service first'}
+                    disabled={!formData.service}
+                    />
+                 
+              
+                {formData.staff && (() => {
+                  const { current, max } = getStaffLoad(formData.staff);
                   if (current >= max) {
-                    const staff = getStaff(formData.assignedStaffId);
+                    const staff = getStaff(formData.staff);
                     return (
                       <Alert className="mt-2 border-warning bg-warning/10">
                         <AlertTriangle className="h-4 w-4 text-warning" />
@@ -460,7 +446,7 @@ const AppointmentsPage = () => {
                   </Select>
                 </div>
               )}
-            </div>
+            
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
@@ -468,15 +454,24 @@ const AppointmentsPage = () => {
               <Button
                 onClick={handleSave}
                 className="gradient-primary text-primary-foreground"
-                disabled={!formData.customerName || !formData.serviceId || !!conflict}
+                disabled={!formData.customerName || !formData.service || !!conflict || isCreating}
               >
-                {editingAppointment ? 'Save Changes' : 'Create Appointment'}
+                {isCreating ? (
+                  <>
+                    <InlineSpinner className="mr-2" />
+                    {editingAppointment ? 'Saving...' : 'Creating...'}
+                  </>
+                ) : (
+                  editingAppointment ? 'Save Changes' : 'Create Appointment'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        
       </div>
     </AppLayout>
+  
   );
 };
 

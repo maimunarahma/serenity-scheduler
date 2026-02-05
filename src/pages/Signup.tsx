@@ -5,9 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, CheckCircle } from 'lucide-react';
+import axios from 'axios';
+import { useAuth } from '@/hooks/authHook';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { user ,register } = useAuth();
+  console.log(user)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,10 +19,15 @@ const Signup = () => {
     confirmPassword: '',
   });
 
-  const handleSignup = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Static signup - just navigate to dashboard
-    navigate('/dashboard');
+  const handleSignup = async(e: React.FormEvent) => {
+   try {
+     e.preventDefault();
+     await register(formData.email, formData.password);
+     // Static signup - just navigate to dashboard
+     navigate('/');
+   } catch (error) {
+    console.error('Signup failed:', error);
+   }
   };
 
   return (
@@ -82,18 +91,6 @@ const Signup = () => {
             </CardHeader>
             <form onSubmit={handleSignup}>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="h-11"
-                    required
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input

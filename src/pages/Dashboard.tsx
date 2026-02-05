@@ -5,8 +5,11 @@ import StatCard from '@/components/dashboard/StatCard';
 import StaffLoadItem from '@/components/dashboard/StaffLoadItem';
 import ActivityLogItem from '@/components/dashboard/ActivityLogItem';
 import { mockStaff, mockAppointments, mockQueueItems, mockActivityLogs } from '@/data/mockData';
+import { useAuth } from '@/hooks/authHook';
 
 const Dashboard = () => {
+  const { user } =useAuth();
+  
   const today = new Date().toISOString().split('T')[0];
   const todayAppointments = mockAppointments.filter((apt) => apt.date === today);
   const completedToday = todayAppointments.filter((apt) => apt.status === 'Completed').length;

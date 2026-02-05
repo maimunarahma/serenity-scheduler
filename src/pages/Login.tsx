@@ -5,17 +5,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, Users } from 'lucide-react';
-
+import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
+import NotFound from './NotFound';
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+ const { login, isLoading , logout} = useAuth();
+  const handleLogin = async(e: React.FormEvent) => {
+   
     // Static login - just navigate to dashboard
-    navigate('/dashboard');
+    try {
+       e.preventDefault();
+      await login(email, password);
+       navigate('/dashboard');
+       alert('Login successful!');
+    } catch (error) {
+      console.error('Login failed:', error);
+      alert('Login failed. Please try again.');
+    }
+   
   };
+  if(isLoading) return <NotFound />;
 
   return (
     <div className="min-h-screen flex">
