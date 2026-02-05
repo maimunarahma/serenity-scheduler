@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import type { User, AuthContextType } from '@/types';
 import axios from 'axios';
 
@@ -20,11 +20,14 @@ interface AuthProviderProps {
 // API functions
 const fetchCurrentUser = async (): Promise<User | null> => {
   try {
+    console.log('Fetching current user with cookies...');
     const { data } = await axios.get(`${import.meta.env.VITE_SERVER_URL}/auth/me`, {
       withCredentials: true,
     });
+    console.log('User fetched successfully:', data);
     return data;
   } catch (error) {
+    console.log('Not authenticated or cookies missing:', error);
     // If not authenticated, return null
     return null;
   }
@@ -45,7 +48,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     queryFn: fetchCurrentUser,
     staleTime: 300000, // 5 minutes
     refetchOnWindowFocus: true,
-    retry: false, // Don't retry if not authenticated
+    refetchOnMount: true, // Always check on mount
+    retry: 1, // Retry once if fails
+    retryDelay: 1000, // Wait 1 second before retry
   });
 
   // Register mutation
@@ -69,24 +74,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const register = async (email: string, password: string): Promise<void> => {
     await registerMutation.mutateAsync({ email, password });
   };
+
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      console.log('Logging in...');
       const { data } = await axios.post(
         `${import.meta.env.VITE_SERVER_URL}/auth`,
         { email, password },
         { withCredentials: true }
       );
+      console.log('Login successful, user data:', data);
       return data;
     },
     onSuccess: (data) => {
+      console.log('Setting user data in cache');
       queryClient.setQueryData(['currentUser'], data);
+      // Force refetch to ensure cookie is working
+      setTimeout(() => refetch(), 100);
     },
     onError: (error) => {
       console.error('Login failed:', error);
       queryClient.setQueryData(['currentUser'], null);
     },
-  });
+  }); 
+
 
   const login = async (email: string, password: string): Promise<void> => {
     await loginMutation.mutateAsync({ email, password });

@@ -107,7 +107,7 @@ export const LogoutButton = () => {
 export const AdminOnlySection = () => {
   const { user, isAuthenticated } = useAuth();
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated ) {
     return null; // Or show "Access Denied" message
   }
 
@@ -143,7 +143,7 @@ export const AuthStatusIndicator = () => {
   return (
     <div className="flex items-center gap-2">
       <div className={`w-2 h-2 rounded-full ${isAuthenticated ? 'bg-green-500' : 'bg-red-500'}`} />
-      <span>{isAuthenticated ? `Logged in as ${user?.name}` : 'Not logged in'}</span>
+      <span>{isAuthenticated ? `Logged in as ${user?.email}` : 'Not logged in'}</span>
     </div>
   );
 };

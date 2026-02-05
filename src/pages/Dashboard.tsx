@@ -8,7 +8,7 @@ import { mockStaff, mockAppointments, mockQueueItems, mockActivityLogs } from '@
 import { useAuth } from '@/hooks/authHook';
 
 const Dashboard = () => {
-  const { user } =useAuth();
+  const { user , refetch } =useAuth();
   
   const today = new Date().toISOString().split('T')[0];
   const todayAppointments = mockAppointments.filter((apt) => apt.date === today);
