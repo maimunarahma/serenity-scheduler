@@ -44,14 +44,12 @@ export const UserProfile = () => {
 
   return (
     <div className="flex items-center gap-3">
-      <Avatar>
+      {/* <Avatar>
         <AvatarImage src={user.avatar} alt={user.name} />
-        <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-      </Avatar>
+        <AvatarFallback>{user.email ? user.email : 'UnKnown'}</AvatarFallback>
+      </Avatar> */}
       <div>
-        <p className="font-medium">{user.name}</p>
-        <p className="text-sm text-muted-foreground">{user.email}</p>
-        <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+        <p className="font-medium">{user.email}</p>
       </div>
       <Button 
         onClick={() => refetch()} 
