@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Edit2, Trash2, Calendar as CalendarIcon, Clock, AlertTriangle, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout';
@@ -48,6 +48,7 @@ const timeSlots = Array.from({ length: 18 }, (_, i) => {
 const AppointmentsPage = () => {
   const { appointments, createAppointment, deleteAppointment, isLoading, error, isCreating, isSaving } = useAppointments();
   console.log(appointments)
+ 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -138,7 +139,11 @@ const AppointmentsPage = () => {
       (s) => s.serviceType === service.requiredStaffType && s.availabilityStatus === 'Available'
     );
   };
-
+ const sortedAppointments = useMemo(() => {
+    if(!Array.isArray(appointments)) return [];
+    return [...appointments].filter(a=> trypeof a.startTime === 'string')
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }, [appointments]);
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
@@ -194,7 +199,7 @@ const AppointmentsPage = () => {
               <Badge variant="secondary">{appointments?.length} appointments</Badge>
             </div>
 
-            {appointments.length === 0 ? (
+            {sortedAppointments.length === 0 ? (
               <Card className="border-border/50 border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <CalendarIcon className="w-12 h-12 text-muted-foreground/50 mb-4" />
@@ -210,8 +215,7 @@ const AppointmentsPage = () => {
               </Card>
             ) : (
               <div className="space-y-3">
-                {appointments
-                  .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                {sortedAppointments
                   .map((appointment) => {
                     const service = getService(appointment.service);
                     const staff = getStaff(appointment.staff);
