@@ -12,9 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockActivityLogs } from '@/data/mockData';
-import { ActivityLog } from '@/types';
+
+import { ActivityLog, Appointment } from '@/types';
 import { cn } from '@/lib/utils';
+import { useAppointmentContext } from '@/hooks/useAppointments';
+
 
 const typeConfig = {
   assignment: { icon: Users, color: 'text-primary', bg: 'bg-primary/10', label: 'Assignment' },
@@ -25,16 +27,16 @@ const typeConfig = {
 
 const ActivityPage = () => {
   const [filter, setFilter] = useState<string>('all');
-
+  
+ const { appointments } = useAppointmentContext();
   const filteredLogs =
     filter === 'all'
-      ? mockActivityLogs
-      : mockActivityLogs.filter((log) => log.type === filter);
-
-  const groupLogsByDate = (logs: ActivityLog[]) => {
-    const groups: Record<string, ActivityLog[]> = {};
+      ? appointments
+      : appointments.filter((log) => log.status === filter);
+  const groupLogsByDate = (logs: Appointment[]) => {
+    const groups: Record<string, Appointment[]> = {};
     logs.forEach((log) => {
-      const date = format(new Date(log.timestamp), 'yyyy-MM-dd');
+      const date = format(new Date(log.date), 'yyyy-MM-dd');
       if (!groups[date]) {
         groups[date] = [];
       }
@@ -74,7 +76,7 @@ const ActivityPage = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Object.entries(typeConfig).map(([type, config]) => {
-            const count = mockActivityLogs.filter((log) => log.type === type).length;
+            const count = appointments.filter((log) => log.status === type).length;
             const Icon = config.icon;
             return (
               <Card
@@ -129,10 +131,10 @@ const ActivityPage = () => {
 
                     <div className="space-y-4">
                       {logs
-                        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                        .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
                         .map((log) => {
-                          const config = typeConfig[log.type];
-                          const Icon = config.icon;
+                          const config = typeConfig[log.status];
+                          const Icon = config?.icon;
 
                           return (
                             <div
@@ -148,14 +150,14 @@ const ActivityPage = () => {
                                 <Icon className={cn('w-5 h-5', config.color)} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-foreground">{log.message}</p>
+                                {/* <p className="text-sm text-foreground">{log.message}</p> */}
                                 <div className="flex items-center gap-3 mt-2">
                                   <span className="text-xs text-muted-foreground">
-                                    {format(new Date(log.timestamp), 'h:mm a')}
+                                    {format(new Date(log.startTime), 'h:mm a')}
                                   </span>
                                   <span className="text-xs text-muted-foreground">•</span>
                                   <span className="text-xs text-muted-foreground">
-                                    {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                                    {formatDistanceToNow(new Date(log.startTime), { addSuffix: true })}
                                   </span>
                                 </div>
                               </div>

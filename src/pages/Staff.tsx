@@ -18,26 +18,34 @@ import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
-  SelectItem,
+  SelectItem,  
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockStaff, getStaffLoad } from '@/data/mockData';
+import { getStaffAppointmentsToday } from '@/data/mockData';
 import { Staff, StaffType, AvailabilityStatus } from '@/types';
 import { cn } from '@/lib/utils';
+import { PageLoader } from '@/components/ui/loading-spinner';
+import { useStaff } from '@/hooks/useStaff';
+
 
 const staffTypes: StaffType[] = ['Doctor', 'Consultant', 'Support Agent'];
 
 const StaffPage = () => {
-  const [staff, setStaff] = useState<Staff[]>(mockStaff);
+  const { createStaff, staff, updateStaff, deleteStaff, isLoading ,refetch } = useStaff();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  console.log(staff)
   const [formData, setFormData] = useState({
     name: '',
     serviceType: 'Doctor' as StaffType,
     dailyCapacity: 5,
     availabilityStatus: 'Available' as AvailabilityStatus,
   });
+
+  if (isLoading) {
+    return <PageLoader text="Loading staff..." />;
+  }
 
   const handleOpenDialog = (staffMember?: Staff) => {
     if (staffMember) {
@@ -46,7 +54,7 @@ const StaffPage = () => {
         name: staffMember.name,
         serviceType: staffMember.serviceType,
         dailyCapacity: staffMember.dailyCapacity,
-        availabilityStatus: staffMember.availabilityStatus,
+        availabilityStatus: staffMember.status,
       });
     } else {
       setEditingStaff(null);
@@ -60,31 +68,26 @@ const StaffPage = () => {
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingStaff) {
-      setStaff(staff.map((s) => (s.id === editingStaff.id ? { ...s, ...formData } : s)));
+      await updateStaff(editingStaff._id, formData);
+      refetch(); 
     } else {
-      const newStaff: Staff = {
-        id: Date.now().toString(),
-        ...formData,
-      };
-      setStaff([...staff, newStaff]);
+      await createStaff(formData);
+      refetch();
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setStaff(staff.filter((s) => s.id !== id));
+  const handleDelete = async (id: string) => {
+    await deleteStaff(id);
+    refetch();
   };
 
-  const toggleAvailability = (id: string) => {
-    setStaff(
-      staff.map((s) =>
-        s.id === id
-          ? { ...s, availabilityStatus: s.availabilityStatus === 'Available' ? 'On Leave' : 'Available' }
-          : s
-      )
-    );
+  const toggleAvailability = async (member: Staff) => {
+    await updateStaff(member._id, {
+      availabilityStatus: member.status === 'Available' ? 'On Leave' : 'Available'
+    });
   };
 
   return (
@@ -102,6 +105,7 @@ const StaffPage = () => {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Staff
               </Button>
+
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -186,11 +190,13 @@ const StaffPage = () => {
         {/* Staff Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {staff.map((member) => {
-            const { current, max } = getStaffLoad(member.id);
-            const isAvailable = member.availabilityStatus === 'Available';
+            const appointments = getStaffAppointmentsToday(member._id);
+            const current = appointments.length;
+            const max = member.dailyCapacity;
+            const isAvailable = member.status === 'Available';
 
             return (
-              <Card key={member.id} className="staff-card overflow-hidden">
+              <Card key={member._id} className="staff-card overflow-hidden">
                 <CardContent className="p-0">
                   <div className={cn('h-2', isAvailable ? 'gradient-primary' : 'bg-muted')} />
                   <div className="p-5">
@@ -202,7 +208,7 @@ const StaffPage = () => {
                             isAvailable ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                           )}
                         >
-                          {member.name
+                          {member?.name
                             .split(' ')
                             .map((n) => n[0])
                             .join('')}
@@ -215,7 +221,7 @@ const StaffPage = () => {
                       <Badge variant={isAvailable ? 'default' : 'secondary'} className={cn(
                         isAvailable ? 'bg-success text-success-foreground' : ''
                       )}>
-                        {member.availabilityStatus}
+                        {member.status}
                       </Badge>
                     </div>
 
@@ -245,7 +251,7 @@ const StaffPage = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => toggleAvailability(member.id)}
+                        onClick={() => toggleAvailability(member)}
                         className="flex-1"
                       >
                         {isAvailable ? (
@@ -267,7 +273,7 @@ const StaffPage = () => {
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(member.id)}
+                        onClick={() => handleDelete(member._id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

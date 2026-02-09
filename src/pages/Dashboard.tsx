@@ -4,24 +4,76 @@ import AppLayout from '@/components/layout/AppLayout';
 import StatCard from '@/components/dashboard/StatCard';
 import StaffLoadItem from '@/components/dashboard/StaffLoadItem';
 import ActivityLogItem from '@/components/dashboard/ActivityLogItem';
-import { mockStaff, mockAppointments, mockQueueItems, mockActivityLogs } from '@/data/mockData';
-import { useAuth } from '@/hooks/authHook';
+import {  mockQueueItems } from '@/data/mockData';
+import { useStaff } from '@/hooks/useStaff';
+import { PageLoader } from '@/components/ui/loading-spinner';
+import { useAppointmentContext } from '@/hooks/useAppointments';
+import { useAuth } from '@/hooks/useAuth';
+
 
 const Dashboard = () => {
-  const { user , refetch } =useAuth();
+  const { user } = useAuth();
+  const { staff, isLoading } = useStaff();
+  const { appointments} = useAppointmentContext();
   
-  const today = new Date().toISOString().split('T')[0];
-  const todayAppointments = mockAppointments.filter((apt) => apt.date === today);
+  const today = new Date()
+  const todayAppointments = appointments.filter((apt) =>{
+    const aptDate = new Date(apt.date);
+    return aptDate.getFullYear() === today.getFullYear() &&
+            aptDate.getMonth() === today.getMonth() &&
+            aptDate.getDate() === today.getDate();
+  });
+  
   const completedToday = todayAppointments.filter((apt) => apt.status === 'Completed').length;
   const pendingToday = todayAppointments.filter((apt) => apt.status === 'Scheduled').length;
-  const availableStaff = mockStaff.filter((s) => s.availabilityStatus === 'Available');
+  const availableStaff = staff.filter((s) => s.status === 'Available');
+  const onLeaveStaff = staff.filter((s) => s.status === 'On Leave');
+  
+  // Generate activity logs dynamically from appointments
+  const recentActivity = appointments
+    .filter(apt => apt.createdAt) // Only appointments with createdAt
+    .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+    .slice(0, 5)
+    .map(apt => {
+      const staffMember = staff.find(s => s._id === apt.staff);
+      let message = '';
+      let type: 'assignment' | 'status' | 'queue' | 'conflict' = 'status';
+      
+      if (apt.status === 'Completed') {
+        message = `Appointment for "${apt.customerName}" marked as completed${staffMember ? ` by ${staffMember.name}` : ''}.`;
+        type = 'status';
+      } else if (apt.status === 'Scheduled' && apt.staff) {
+        message = `Appointment for "${apt.customerName}" assigned to ${staffMember ? staffMember.name : 'staff member'}.`;
+        type = 'assignment';
+      } else if (apt.status === 'Cancelled') {
+        message = `Appointment for "${apt.customerName}" cancelled.`;
+        type = 'status';
+      } else if (apt.status === 'Waiting') {
+        message = `"${apt.customerName}" added to queue.`;
+        type = 'queue';
+      } else {
+        message = `New appointment for "${apt.customerName}" created.`;
+        type = 'assignment';
+      }
+      
+      return {
+        id: apt.id || `activity-${apt.customerName}`,
+        message,
+        timestamp: apt.createdAt!,
+        type
+      };
+    });
+  
+  if (isLoading) {
+    return <PageLoader text="Loading dashboard..." />;
+  }
 
   return (
     <AppLayout>
       <div className="space-y-8 animate-fade-in">
         {/* Welcome Section */}
         <div>
-          <h2 className="text-2xl font-display font-bold text-foreground">Good morning, John!</h2>
+          <h2 className="text-2xl font-display font-bold text-foreground">Good morning, {user?.email}!</h2>
           <p className="text-muted-foreground mt-1">Here's what's happening with your appointments today.</p>
         </div>
 
@@ -51,7 +103,7 @@ const Dashboard = () => {
           <StatCard
             title="Available Staff"
             value={availableStaff.length}
-            subtitle={`${mockStaff.length - availableStaff.length} on leave`}
+            subtitle={`${onLeaveStaff.length} on leave`}
             icon={Users}
           />
         </div>
@@ -67,9 +119,15 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
-              {availableStaff.map((staff) => (
-                <StaffLoadItem key={staff.id} staff={staff} />
-              ))}
+              { availableStaff.length > 0 ? (
+                availableStaff.map((staffMember) => (
+                  <StaffLoadItem key={staffMember._id} staff={staffMember} />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No available staff today
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -82,9 +140,15 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {mockActivityLogs.slice(0, 5).map((log) => (
-                <ActivityLogItem key={log.id} log={log} />
-              ))}
+              {recentActivity.length > 0 ? (
+                recentActivity.map((log) => (
+                  <ActivityLogItem key={log.id} log={log} />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No recent activity
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

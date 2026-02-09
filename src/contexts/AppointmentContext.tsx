@@ -57,7 +57,7 @@ interface AppointmentContextType {
   isRefetching: boolean;
 }
 
-const AppointmentContext = createContext<AppointmentContextType | undefined>(undefined);
+export const AppointmentContext = createContext<AppointmentContextType | undefined>(undefined);
 
 interface AppointmentProviderProps {
   children: ReactNode;
@@ -70,7 +70,8 @@ const fetchAppointments = async (): Promise<Appointment[]> => {
       withCredentials: true,
     });
     // Ensure data is always an array
-    return Array.isArray(res.data.appointments) ? res.data.appointments : [];
+    console.log(res.data)
+    return Array.isArray(res.data.appoinments) ? res.data.appoinments : [];
   } catch (error) {
     console.error('Failed to fetch appointments:', error);
     // Return empty array on error
@@ -295,14 +296,6 @@ export const AppointmentProvider = ({ children }: AppointmentProviderProps) => {
       {children}
     </AppointmentContext.Provider>
   );
-};
-
-export const useAppointmentContext = () => {
-  const context = useContext(AppointmentContext);
-  if (context === undefined) {
-    throw new Error('useAppointmentContext must be used within an AppointmentProvider');
-  }
-  return context;
 };
 
 // Prevent Fast Refresh warning by having only the Provider component exported

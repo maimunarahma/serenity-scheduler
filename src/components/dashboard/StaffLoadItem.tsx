@@ -1,5 +1,5 @@
 import { Staff } from '@/types';
-import { getStaffLoad } from '@/data/mockData';
+import { getStaffAppointmentsToday } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 interface StaffLoadItemProps {
@@ -7,7 +7,9 @@ interface StaffLoadItemProps {
 }
 
 const StaffLoadItem = ({ staff }: StaffLoadItemProps) => {
-  const { current, max } = getStaffLoad(staff.id);
+  const appointments = getStaffAppointmentsToday(staff.id);
+  const current = appointments.length;
+  const max = staff.dailyCapacity;
   const percentage = (current / max) * 100;
   const isOverloaded = current >= max;
   const isNearCapacity = current >= max - 1 && !isOverloaded;

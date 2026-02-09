@@ -24,12 +24,15 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {  mockServices, mockStaff, getStaffLoad } from '@/data/mockData';
+import {  mockServices,   } from '@/data/mockData';
 import { Appointment, AppointmentStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAppointments } from '@/hooks/useAppointments';
+
 import { PageLoader, InlineSpinner, SavingOverlay } from '@/components/ui/loading-spinner';
+import { useStaffs } from '@/hooks/useStaffs';
+import { useStaff } from '@/hooks/useStaff';
+import { useAppointmentContext } from '@/hooks/useAppointments';
 
 const statusColors: Record<AppointmentStatus, string> = {
   Scheduled: 'bg-primary/10 text-primary',
@@ -46,7 +49,8 @@ const timeSlots = Array.from({ length: 18 }, (_, i) => {
 });
 
 const AppointmentsPage = () => {
-  const { appointments, createAppointment, deleteAppointment, isLoading, error, isCreating, isSaving } = useAppointments();
+  const { appointments, createAppointment, deleteAppointment, isLoading, error, isCreating, isSaving } = useAppointmentContext();
+  const { staff } = useStaff();
   console.log(appointments)
  
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -130,13 +134,13 @@ const AppointmentsPage = () => {
   };
 
   const getService = (serviceId: string) => mockServices.find((s) => s.id === serviceId);
-  const getStaff = (staffId: string | null) => mockStaff.find((s) => s.id === staffId);
+  const getStaff = (staffId: string | null) => staff.find((s) => s._id === staffId);
 
   const getEligibleStaff = (serviceId: string) => {
     const service = getService(serviceId);
     if (!service) return [];
-    return mockStaff.filter(
-      (s) => s.serviceType === service.requiredStaffType && s.availabilityStatus === 'Available'
+    return staff.filter(
+      (s) => s.serviceType === service.name && s.status === 'Available'
     );
   };
  const sortedAppointments = useMemo(() => {
@@ -401,9 +405,7 @@ const AppointmentsPage = () => {
                     placeholder={formData.service ? 'Enter staff name' : 'Select a service first'}
                     disabled={!formData.service}
                     />
-                 
-              
-                {formData.staff && (() => {
+                  {formData.staff && (() => {
                   const { current, max } = getStaffLoad(formData.staff);
                   if (current >= max) {
                     const staff = getStaff(formData.staff);

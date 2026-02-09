@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider} from "@/contexts/AuthContext";
 import { AppointmentProvider } from "@/contexts/AppointmentContext";
 import { StaffProvider } from "@/contexts/StaffContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -17,6 +17,7 @@ import AppointmentsPage from "./pages/Appointments";
 import QueuePage from "./pages/Queue";
 import ActivityPage from "./pages/Activity";
 import NotFound from "./pages/NotFound";
+import { useAuth } from "./hooks/useAuth";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ const queryClient = new QueryClient({
 // Component that shows loading during auth check
 const AppContent = () => {
   const { isLoading, user } = useAuth();
+
   const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   useEffect(() => {
@@ -49,7 +51,7 @@ const AppContent = () => {
       />
     );
   }
-
+ if(!user) return <Navigate to="/login" />;
   return (
     <AppointmentProvider>
       <StaffProvider>

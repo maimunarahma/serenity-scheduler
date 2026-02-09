@@ -1,10 +1,10 @@
-import { ActivityLog as ActivityLogType } from '@/types';
+import { ActivityLog } from '@/types';
 import { Clock, CheckCircle, AlertTriangle, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ActivityLogItemProps {
-  log: ActivityLogType;
+  log: ActivityLog;
 }
 
 const typeConfig = {

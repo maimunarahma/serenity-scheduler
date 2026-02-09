@@ -20,9 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockQueueItems, mockQueueAppointments, mockServices, mockStaff, getStaffLoad } from '@/data/mockData';
+import { mockQueueItems, mockQueueAppointments, mockServices,  getStaffLoad } from '@/data/mockData';
 import { Appointment, QueueItem, Staff } from '@/types';
 import { cn } from '@/lib/utils';
+import { useStaff } from '@/hooks/useStaff';
 
 const QueuePage = () => {
   const [queueItems, setQueueItems] = useState<QueueItem[]>(mockQueueItems);
@@ -30,6 +31,7 @@ const QueuePage = () => {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedQueueItem, setSelectedQueueItem] = useState<QueueItem | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
+  const { staff } = useStaff();
 
   const getAppointment = (appointmentId: string) =>
     queueAppointments.find((apt) => apt.id === appointmentId);
@@ -39,8 +41,8 @@ const QueuePage = () => {
   const getEligibleStaff = (serviceId: string): Staff[] => {
     const service = getService(serviceId);
     if (!service) return [];
-    return mockStaff.filter(
-      (s) => s.serviceType === service.requiredStaffType && s.availabilityStatus === 'Available'
+    return staff.filter(
+      (s) => s.serviceType === service.requiredStaffType && s.status === 'Available'
     );
   };
 
@@ -77,7 +79,7 @@ const QueuePage = () => {
     const appointment = getAppointment(queueItem.appointmentId);
     if (!appointment) return;
 
-    const eligibleStaff = getEligibleStaff(appointment.serviceId);
+    const eligibleStaff = getEligibleStaff(appointment?.serviceId);
     
     // Find staff with lowest load
     let bestStaff: Staff | null = null;
@@ -241,7 +243,7 @@ const QueuePage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockStaff
+              {staff
                 .filter((s) => s.availabilityStatus === 'Available')
                 .map((staff) => {
                   const { current, max } = getStaffLoad(staff.id);

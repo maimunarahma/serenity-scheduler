@@ -3,15 +3,8 @@ import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/re
 import type { User, AuthContextType } from '@/types';
 import axios from 'axios';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -148,5 +141,3 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-// Prevent Fast Refresh warning by having only the Provider component exported

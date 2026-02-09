@@ -8,20 +8,18 @@ export type ServiceDuration = 15 | 30 | 60;
 
 export type AppointmentStatus = 'Waiting' | 'Scheduled' | 'Completed' | 'Cancelled' | 'No-Show';
 export interface Staff {
-  id: string;
+  _id: string;
   name: string;
   serviceType: StaffType;
   dailyCapacity: number;
-  availabilityStatus: AvailabilityStatus;
-  avatar?: string;
+   status: AvailabilityStatus;
+  
 }
 
 export interface Service {
   id: string;
   name: string;
   duration: ServiceDuration;
-  requiredStaffType: StaffType;
-  description?: string;
 }
 
 export interface Appointment {
@@ -37,12 +35,6 @@ export interface Appointment {
   createdAt?: string;
 }
 
-export interface QueueItem {
-  id: string;
-  appointmentId: string;
-  position: number;
-  addedAt: string;
-}
 
 export interface ActivityLog {
   id: string;

@@ -6,8 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, CheckCircle } from 'lucide-react';
 import axios from 'axios';
-import { useAuth } from '@/hooks/authHook';
-
+import { useAuth } from '@/hooks/useAuth';
 const Signup = () => {
   const navigate = useNavigate();
   const { user ,register } = useAuth();

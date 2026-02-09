@@ -1,43 +1,5 @@
 import { Staff, Service, Appointment, QueueItem, ActivityLog } from '@/types';
 
-export const mockStaff: Staff[] = [
-  {
-    id: '1',
-    name: 'Dr. Riya Sharma',
-    serviceType: 'Doctor',
-    dailyCapacity: 5,
-    availabilityStatus: 'Available',
-  },
-  {
-    id: '2',
-    name: 'Farhan Ahmed',
-    serviceType: 'Consultant',
-    dailyCapacity: 5,
-    availabilityStatus: 'Available',
-  },
-  {
-    id: '3',
-    name: 'Priya Patel',
-    serviceType: 'Support Agent',
-    dailyCapacity: 5,
-    availabilityStatus: 'Available',
-  },
-  {
-    id: '4',
-    name: 'Dr. Arjun Mehta',
-    serviceType: 'Doctor',
-    dailyCapacity: 5,
-    availabilityStatus: 'On Leave',
-  },
-  {
-    id: '5',
-    name: 'Sara Khan',
-    serviceType: 'Consultant',
-    dailyCapacity: 5,
-    availabilityStatus: 'Available',
-  },
-];
-
 export const mockServices: Service[] = [
   {
     id: '1',
@@ -187,50 +149,50 @@ export const mockQueueAppointments: Appointment[] = [
   },
 ];
 
-export const mockActivityLogs: ActivityLog[] = [
-  {
-    id: '1',
-    message: 'Appointment for "John Doe" marked as completed by Dr. Riya Sharma.',
-    timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
-    type: 'status',
-  },
-  {
-    id: '2',
-    message: 'Appointment for "Jane Smith" auto-assigned to Dr. Riya Sharma.',
-    timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
-    type: 'assignment',
-  },
-  {
-    id: '3',
-    message: 'Appointment moved from queue to Farhan Ahmed.',
-    timestamp: new Date(Date.now() - 90 * 60000).toISOString(),
-    type: 'queue',
-  },
-  {
-    id: '4',
-    message: 'Time conflict detected for Dr. Arjun Mehta at 10:00 AM.',
-    timestamp: new Date(Date.now() - 120 * 60000).toISOString(),
-    type: 'conflict',
-  },
-  {
-    id: '5',
-    message: 'New appointment for "Emily Brown" created.',
-    timestamp: new Date(Date.now() - 180 * 60000).toISOString(),
-    type: 'assignment',
-  },
-  {
-    id: '6',
-    message: 'Appointment for "Sarah Davis" cancelled.',
-    timestamp: new Date(Date.now() - 240 * 60000).toISOString(),
-    type: 'status',
-  },
-  {
-    id: '7',
-    message: 'Dr. Arjun Mehta marked as "On Leave".',
-    timestamp: new Date(Date.now() - 300 * 60000).toISOString(),
-    type: 'status',
-  },
-];
+// export const mockActivityLogs: ActivityLog[] = [
+//   {
+//     id: '1',
+//     message: 'Appointment for "John Doe" marked as completed by Dr. Riya Sharma.',
+//     timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
+//     type: 'status',
+//   },
+//   {
+//     id: '2',
+//     message: 'Appointment for "Jane Smith" auto-assigned to Dr. Riya Sharma.',
+//     timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
+//     type: 'assignment',
+//   },
+//   {
+//     id: '3',
+//     message: 'Appointment moved from queue to Farhan Ahmed.',
+//     timestamp: new Date(Date.now() - 90 * 60000).toISOString(),
+//     type: 'queue',
+//   },
+//   {
+//     id: '4',
+//     message: 'Time conflict detected for Dr. Arjun Mehta at 10:00 AM.',
+//     timestamp: new Date(Date.now() - 120 * 60000).toISOString(),
+//     type: 'conflict',
+//   },
+//   {
+//     id: '5',
+//     message: 'New appointment for "Emily Brown" created.',
+//     timestamp: new Date(Date.now() - 180 * 60000).toISOString(),
+//     type: 'assignment',
+//   },
+//   {
+//     id: '6',
+//     message: 'Appointment for "Sarah Davis" cancelled.',
+//     timestamp: new Date(Date.now() - 240 * 60000).toISOString(),
+//     type: 'status',
+//   },
+//   {
+//     id: '7',
+//     message: 'Dr. Arjun Mehta marked as "On Leave".',
+//     timestamp: new Date(Date.now() - 300 * 60000).toISOString(),
+//     type: 'status',
+//   },
+// ];
 
 // Helper function to get appointments for a specific staff member today
 export const getStaffAppointmentsToday = (staffId: string): Appointment[] => {
@@ -241,11 +203,11 @@ export const getStaffAppointmentsToday = (staffId: string): Appointment[] => {
 };
 
 // Helper function to get staff load
-export const getStaffLoad = (staffId: string): { current: number; max: number } => {
-  const staff = mockStaff.find((s) => s.id === staffId);
-  const appointments = getStaffAppointmentsToday(staffId);
-  return {
-    current: appointments.length,
-    max: staff?.dailyCapacity || 5,
-  };
+// Note: This will need to be updated to use dynamic staff data
+export const getStaffLoad = (
+  staffId: string,
+  staffList: Staff[]
+) => {
+  const staff = staffList?.find(s => s.id === staffId);
+  return staff?.appointments?.length || 0;
 };

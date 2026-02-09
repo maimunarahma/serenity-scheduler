@@ -67,7 +67,7 @@ interface StaffContextType {
   isRefetching: boolean;
 }
 
-const StaffContext = createContext<StaffContextType | undefined>(undefined);
+export const StaffContext = createContext<StaffContextType | undefined>(undefined);
 
 interface StaffProviderProps {
   children: ReactNode;
@@ -237,12 +237,12 @@ export const StaffProvider = ({ children }: StaffProviderProps) => {
   };
 
   const getAvailableStaff = (): Staff[] => {
-    return staff.filter((s) => s.availabilityStatus === 'Available');
+    return staff.filter((s) => s.status === 'Available');
   };
 
   const getAvailableStaffByType = (serviceType: StaffType): Staff[] => {
     return staff.filter(
-      (s) => s.serviceType === serviceType && s.availabilityStatus === 'Available'
+      (s) => s.serviceType === serviceType && s.status === 'Available'
     );
   };
 
@@ -282,8 +282,8 @@ export const StaffProvider = ({ children }: StaffProviderProps) => {
   const getStaffStats = () => {
     return {
       total: staff.length,
-      available: staff.filter((s) => s.availabilityStatus === 'Available').length,
-      onLeave: staff.filter((s) => s.availabilityStatus === 'On Leave').length,
+      available: staff.filter((s) => s.status === 'Available').length,
+      onLeave: staff.filter((s) => s.status === 'On Leave').length,
       byType: {
         doctors: staff.filter((s) => s.serviceType === 'Doctor').length,
         consultants: staff.filter((s) => s.serviceType === 'Consultant').length,
@@ -338,12 +338,5 @@ export const StaffProvider = ({ children }: StaffProviderProps) => {
   );
 };
 
-export const useStaffContext = () => {
-  const context = useContext(StaffContext);
-  if (context === undefined) {
-    throw new Error('useStaffContext must be used within a StaffProvider');
-  }
-  return context;
-};
 
-// Prevent Fast Refresh warning by having only the Provider component exported
+ 
