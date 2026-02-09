@@ -21,18 +21,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { mockQueueItems, mockQueueAppointments, mockServices,  getStaffLoad } from '@/data/mockData';
-import { Appointment, QueueItem, Staff } from '@/types';
+import { Appointment , Staff } from '@/types';
 import { cn } from '@/lib/utils';
 import { useStaff } from '@/hooks/useStaff';
+import { useAppointmentContext } from '@/hooks/useAppointments';
 
 const QueuePage = () => {
-  const [queueItems, setQueueItems] = useState<QueueItem[]>(mockQueueItems);
-  const [queueAppointments, setQueueAppointments] = useState<Appointment[]>(mockQueueAppointments);
+
+  const { appointments } = useAppointmentContext();
+  const queue= appointments.filter((apt) => apt.status === 'Waiting' && apt.staff === null);
+  const [queueAppointments, setQueueAppointments] = useState<Appointment[]>(queue);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [selectedQueueItem, setSelectedQueueItem] = useState<QueueItem | null>(null);
+  const [selectedQueueItem, setSelectedQueueItem] = useState<Appointment | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const { staff } = useStaff();
 
+  console.log(queue)
+    const [queueItems, setQueueItems] = useState<Appointment[]>(queue);
   const getAppointment = (appointmentId: string) =>
     queueAppointments.find((apt) => apt.id === appointmentId);
 
@@ -163,9 +168,9 @@ const QueuePage = () => {
                     key={queueItem.id}
                     className={cn(
                       'queue-item border-l-4',
-                      queueItem.position === 1
+                      queueItem.queuePosition === 1
                         ? 'border-l-warning'
-                        : queueItem.position === 2
+                        : queueItem.queuePosition === 2
                         ? 'border-l-primary/50'
                         : 'border-l-border'
                     )}
@@ -176,13 +181,13 @@ const QueuePage = () => {
                           <div
                             className={cn(
                               'w-14 h-14 rounded-xl flex flex-col items-center justify-center font-bold',
-                              queueItem.position === 1
+                              queueItem.queuePosition === 1
                                 ? 'gradient-accent text-accent-foreground'
                                 : 'bg-muted text-muted-foreground'
                             )}
                           >
                             <span className="text-xs">Queue</span>
-                            <span className="text-lg">{getPositionBadge(queueItem.position)}</span>
+                            <span className="text-lg">{getPositionBadge(queueItem.queuePosition)}</span>
                           </div>
                           <div>
                             <h4 className="font-semibold text-foreground text-lg">
@@ -192,12 +197,11 @@ const QueuePage = () => {
                             <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Clock className="w-4 h-4" />
-                                {appointment.time}
+                                {appointment.startTime}
                               </span>
                               <span>•</span>
                               <span>{service?.duration} min</span>
                               <span>•</span>
-                              <span>Requires: {service?.requiredStaffType}</span>
                             </div>
                           </div>
                         </div>
@@ -244,15 +248,15 @@ const QueuePage = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {staff
-                .filter((s) => s.availabilityStatus === 'Available')
+                .filter((s) => s.status === 'Available')
                 .map((staff) => {
-                  const { current, max } = getStaffLoad(staff.id);
+                  const { current, max } = getStaffLoad(staff._id);
                   const percentage = (current / max) * 100;
                   const isOverloaded = current >= max;
 
                   return (
                     <div
-                      key={staff.id}
+                      key={staff._id}
                       className={cn(
                         'p-4 rounded-lg border',
                         isOverloaded ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-card'
@@ -317,8 +321,8 @@ const QueuePage = () => {
               const appointment = getAppointment(selectedQueueItem.appointmentId);
               if (!appointment) return null;
 
-              const service = getService(appointment.serviceId);
-              const eligibleStaff = getEligibleStaff(appointment.serviceId);
+              const service = getService(appointment.service);
+              const eligibleStaff = getEligibleStaff(appointment.service);
 
               return (
                 <div className="py-4 space-y-4">

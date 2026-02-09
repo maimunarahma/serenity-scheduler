@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Plus, Edit2, Trash2, Calendar as CalendarIcon, Clock, AlertTriangle, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {  mockServices,   } from '@/data/mockData';
+import {  mockServices, getStaffLoad   } from '@/data/mockData';
 import { Appointment, AppointmentStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,6 +35,9 @@ import { useStaffs } from '@/hooks/useStaffs';
 import { useStaff } from '@/hooks/useStaff';
 import { useAppointmentContext } from '@/hooks/useAppointments';
 
+// Bangladesh timezone
+const BD_TIMEZONE = 'Asia/Dhaka';
+
 const statusColors: Record<AppointmentStatus, string> = {
   Scheduled: 'bg-primary/10 text-primary',
   Completed: 'bg-success/10 text-success',
@@ -42,6 +46,7 @@ const statusColors: Record<AppointmentStatus, string> = {
   Waiting: 'bg-yellow-100 text-yellow-800',
 };
 
+// Generate time slots in Bangladesh timezone
 const timeSlots = Array.from({ length: 18 }, (_, i) => {
   const hour = Math.floor(i / 2) + 9;
   const minute = (i % 2) * 30;
@@ -52,6 +57,17 @@ const AppointmentsPage = () => {
   const { appointments, createAppointment, deleteAppointment, isLoading, error, isCreating, isSaving } = useAppointmentContext();
   const { staff } = useStaff();
   console.log(appointments)
+
+  // Helper to format time in Bangladesh timezone
+  const formatBDTime = (dateStr: string, timeStr: string): string => {
+    try {
+      const [hours, minutes] = timeStr.split(':');
+      const dateTime = new Date(`${dateStr}T${hours}:${minutes}:00`);
+      return formatInTimeZone(dateTime, BD_TIMEZONE, 'HH:mm');
+    } catch {
+      return timeStr; // fallback to original if parsing fails
+    }
+  };
  
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
@@ -198,7 +214,7 @@ const AppointmentsPage = () => {
           <div className="lg:col-span-3 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-foreground">
-                {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                {formatInTimeZone(selectedDate, BD_TIMEZONE, 'EEEE, MMMM d, yyyy')} (Bangladesh Time)
               </h3>
               <Badge variant="secondary">{appointments?.length} appointments</Badge>
             </div>
@@ -230,7 +246,9 @@ const AppointmentsPage = () => {
                           <div className="flex items-start justify-between">
                             <div className="flex items-start gap-4">
                               <div className="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-primary/10 text-primary">
-                                <span className="text-lg font-bold">{appointment.startTime}</span>
+                                <span className="text-lg font-bold">
+                                  {formatBDTime(appointment.date, appointment.startTime)}
+                                </span>
                                 <span className="text-xs">{service?.duration}m</span>
                               </div>
                               <div>
@@ -366,7 +384,7 @@ const AppointmentsPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="startTime">Start Time</Label>
+                  <Label htmlFor="startTime">Start Time (BD)</Label>
                   <Select value={formData.startTime} onValueChange={handleTimeChange}>
                     <SelectTrigger>
                       <SelectValue />
@@ -382,7 +400,7 @@ const AppointmentsPage = () => {
                 </div>
               </div>
                  <div className="space-y-2">
-                  <Label htmlFor="endTime">End Time</Label>
+                  <Label htmlFor="endTime">End Time (BD)</Label>
                   <Select value={formData.endTime} onValueChange={handleEndTimeChange}>
                     <SelectTrigger>
                       <SelectValue />
@@ -406,14 +424,15 @@ const AppointmentsPage = () => {
                     disabled={!formData.service}
                     />
                   {formData.staff && (() => {
-                  const { current, max } = getStaffLoad(formData.staff);
-                  if (current >= max) {
-                    const staff = getStaff(formData.staff);
+                  const currentLoad = getStaffLoad(formData.staff, staff);
+                  const max = 8; // Maximum appointments per day
+                  if (currentLoad >= max) {
+                    const staffMember = getStaff(formData.staff);
                     return (
                       <Alert className="mt-2 border-warning bg-warning/10">
                         <AlertTriangle className="h-4 w-4 text-warning" />
                         <AlertDescription className="text-warning">
-                          {staff?.name} already has {max} appointments today.
+                          {staffMember?.name} already has {max} appointments today.
                         </AlertDescription>
                       </Alert>
                     );

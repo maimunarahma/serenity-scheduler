@@ -1,14 +1,17 @@
 import { Calendar, CheckCircle, Clock, Users } from 'lucide-react';
+import { formatInTimeZone } from 'date-fns-tz';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import StatCard from '@/components/dashboard/StatCard';
 import StaffLoadItem from '@/components/dashboard/StaffLoadItem';
 import ActivityLogItem from '@/components/dashboard/ActivityLogItem';
-import {  mockQueueItems } from '@/data/mockData';
 import { useStaff } from '@/hooks/useStaff';
 import { PageLoader } from '@/components/ui/loading-spinner';
 import { useAppointmentContext } from '@/hooks/useAppointments';
 import { useAuth } from '@/hooks/useAuth';
+
+// Bangladesh timezone
+const BD_TIMEZONE = 'Asia/Dhaka';
 
 
 const Dashboard = () => {
@@ -95,7 +98,7 @@ const Dashboard = () => {
           />
           <StatCard
             title="Waiting Queue"
-            value={mockQueueItems.length}
+            value={appointments.filter((apt) => apt.status === 'Waiting' && apt.staff === null).length}
             subtitle="Awaiting assignment"
             icon={Clock}
             variant="warning"

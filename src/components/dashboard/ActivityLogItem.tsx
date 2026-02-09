@@ -2,6 +2,9 @@ import { ActivityLog } from '@/types';
 import { Clock, CheckCircle, AlertTriangle, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
+
+const BD_TIMEZONE = 'Asia/Dhaka';
 
 interface ActivityLogItemProps {
   log: ActivityLog;
@@ -18,6 +21,9 @@ const ActivityLogItem = ({ log }: ActivityLogItemProps) => {
   const config = typeConfig[log.type];
   const Icon = config.icon;
 
+  // Convert timestamp to Bangladesh timezone
+  const bdTime = toZonedTime(new Date(log.timestamp), BD_TIMEZONE);
+
   return (
     <div className="activity-log-item animate-fade-in">
       <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', config.bg)}>
@@ -26,7 +32,7 @@ const ActivityLogItem = ({ log }: ActivityLogItemProps) => {
       <div className="flex-1 min-w-0">
         <p className="text-sm text-foreground">{log.message}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+          {formatDistanceToNow(bdTime, { addSuffix: true })} (BD Time)
         </p>
       </div>
     </div>

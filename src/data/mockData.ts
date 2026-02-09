@@ -1,40 +1,33 @@
-import { Staff, Service, Appointment, QueueItem, ActivityLog } from '@/types';
+import { Staff, Service, Appointment } from '@/types';
 
 export const mockServices: Service[] = [
   {
     id: '1',
     name: 'General Consultation',
     duration: 30,
-    requiredStaffType: 'Doctor',
-    description: 'General health check-up and consultation',
+  
   },
   {
     id: '2',
     name: 'Specialist Check-up',
     duration: 60,
-    requiredStaffType: 'Doctor',
-    description: 'Detailed examination with specialist',
+  
   },
   {
     id: '3',
     name: 'Financial Consultation',
     duration: 30,
-    requiredStaffType: 'Consultant',
-    description: 'Financial planning and advice session',
+  
   },
   {
     id: '4',
     name: 'Quick Support',
     duration: 15,
-    requiredStaffType: 'Support Agent',
-    description: 'Quick issue resolution',
   },
   {
     id: '5',
     name: 'Technical Consultation',
     duration: 60,
-    requiredStaffType: 'Consultant',
-    description: 'In-depth technical advisory session',
   },
 ];
 
@@ -89,26 +82,7 @@ export const mockAppointments: Appointment[] = [
   }
 ];
 
-export const mockQueueItems: QueueItem[] = [
-  {
-    id: 'q1',
-    appointmentId: 'q-apt-1',
-    position: 1,
-    addedAt: new Date().toISOString(),
-  },
-  {
-    id: 'q2',
-    appointmentId: 'q-apt-2',
-    position: 2,
-    addedAt: new Date().toISOString(),
-  },
-  {
-    id: 'q3',
-    appointmentId: 'q-apt-3',
-    position: 3,
-    addedAt: new Date().toISOString(),
-  },
-];
+
 
 export const mockQueueAppointments: Appointment[] = [
   {
@@ -208,6 +182,6 @@ export const getStaffLoad = (
   staffId: string,
   staffList: Staff[]
 ) => {
-  const staff = staffList?.find(s => s.id === staffId);
-  return staff?.appointments?.length || 0;
+  const staff = staffList?.find(s => s._id === staffId);
+  return staff?.dailyCapacity || 0;
 };
